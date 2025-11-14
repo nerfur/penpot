@@ -41,6 +41,7 @@
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
    [app.main.ui.workspace.tokens.management.create.text-case :as text-case]
+   [app.main.ui.workspace.tokens.management.validation :as dwtv]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -59,32 +60,6 @@
 
 (defn- valid-name? [name]
   (seq (clean-name (str name))))
-
-;; Schemas ---------------------------------------------------------------------
-
-(defn- make-token-name-schema
-  "Generate a dynamic schema validation to check if a token path derived
-  from the name already exists at `tokens-tree`."
-  [tokens-tree]
-  [:and
-   [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-   (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-    #(not (cft/token-name-path-exists? % tokens-tree))]])
-
-(defn validate-token-name
-  [tokens-tree name]
-  (let [schema    (make-token-name-schema tokens-tree)
-        explainer (sm/explainer schema)]
-    (-> name explainer sm/simplify not-empty)))
-
-(def ^:private schema:token-description
-  [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
-
-(def ^:private validate-token-description
-  (let [explainer (sm/lazy-explainer schema:token-description)]
-    (fn [description]
-      (-> description explainer sm/simplify not-empty))))
 
 ;; Value Validation -------------------------------------------------------------
 
@@ -105,7 +80,7 @@
                 ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (not (sm/valid? cto/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? cto/token-name (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))
@@ -374,7 +349,7 @@
          (mf/deps touched-name?)
          (fn [e]
            (let [value  (dom/get-target-val e)
-                 errors (validate-token-name tokens-tree-in-selected-set value)]
+                 errors (dwtv/validate-token-name tokens-tree-in-selected-set value)]
              (when touched-name? (reset! warning-name-change* true))
              (reset! name-errors* errors))))
 
@@ -382,7 +357,7 @@
         (mf/with-memo [touched-name?]
           (uf/debounce (fn [token-name]
                          (when touched-name?
-                           (reset! name-errors* (validate-token-name tokens-tree-in-selected-set token-name))))
+                           (reset! name-errors* (dwtv/validate-token-name tokens-tree-in-selected-set token-name))))
                        300))
 
         on-update-name
@@ -465,7 +440,7 @@
         (mf/with-memo []
           (uf/debounce (fn [e]
                          (let [value  (dom/get-target-val e)
-                               errors (validate-token-description value)]
+                               errors (dwtv/validate-token-description value)]
                            (reset! description-errors* errors)))))
 
         on-update-description
@@ -486,7 +461,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps is-create token active-theme-tokens validate-token validate-token-description)
+         (mf/deps is-create token active-theme-tokens validate-token)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
@@ -495,11 +470,11 @@
            ;; and press enter before the next validations could return.
 
            (let [clean-name         (clean-name (mf/ref-val token-name-ref))
-                 valid-name?        (empty? (validate-token-name tokens-tree-in-selected-set clean-name))
+                 valid-name?        (empty? (dwtv/validate-token-name tokens-tree-in-selected-set clean-name))
 
                  value              (mf/ref-val value-ref)
                  clean-description  (mf/ref-val description-ref)
-                 valid-description? (or (some-> clean-description validate-token-description empty?) true)]
+                 valid-description? (or (some-> clean-description dwtv/validate-token-description empty?) true)]
 
              (when (and valid-name? valid-description?)
                (->> (validate-token {:token-value value

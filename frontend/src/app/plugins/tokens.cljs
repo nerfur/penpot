@@ -7,17 +7,20 @@
 (ns app.plugins.tokens
   (:require
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.create.form :as token-form]
+   [app.main.ui.workspace.tokens.management.validation :as dwtv]
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [clojure.datafy :refer [datafy]]))
+
+;; === Token
 
 (defn- apply-token-to-shapes
   [file-id set-id id shape-ids attrs]
@@ -51,7 +54,7 @@
      :set
      (fn [_ value]
        (let [tokens-lib (u/locate-tokens-lib file-id)
-             errors     (token-form/validate-token-name
+             errors     (dwtv/validate-token-name
                          (ctob/get-tokens tokens-lib set-id)
                          value)]
          (cond
@@ -104,6 +107,34 @@
       (let [selected (get-in @st/state [:workspace-local :selected])]
         (apply-token-to-shapes file-id set-id id selected attrs)))))
 
+
+;; === Token Set
+
+(def ^private schema:add-token-attrs
+  (-> (sm/schema ctob/schema:token-attrs)
+      (sm/dissoc-key :id)))
+
+(defn- add-token
+  [plugin-id file-id set-id attrs]
+  (let [attrs (u/decode-and-check attrs
+                                  schema:add-token-attrs
+                                  :addToken
+                                  "Invalid token attributes")]
+    (when attrs
+      (let [token (ctob/make-token attrs)]
+        (st/emit! (dwtl/create-token set-id token))
+        (token-proxy plugin-id file-id (:id set) (:id token))))))
+
+(defn- set-token-set-name
+  [proxy name]
+  (let [set (u/locate-token-set (:$file-id proxy) (:$id proxy))]
+    (cond
+      (not (string? name))
+      (u/display-not-valid :name name)
+
+      :else
+      (st/emit! (dwtl/update-token-set set name)))))
+
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"}
@@ -121,14 +152,8 @@
        (let [set (u/locate-token-set file-id id)]
          (ctob/get-name set)))
      :set
-     (fn [_ value]
-       (let [set (u/locate-token-set file-id id)]
-         (cond
-           (not (string? value))
-           (u/display-not-valid :name value)
-
-           :else
-           (st/emit! (dwtl/update-token-set set value)))))}
+     (fn [this value]
+       (set-token-set-name this value))}
 
     :active
     {:this true
@@ -193,21 +218,8 @@
             (token-proxy plugin-id file-id id token-id)))))
 
     :addToken
-    (fn [type-str name value]
-      (let [type (cto/dtcg-token-type->token-type type-str)]
-        (cond
-          (nil? type)
-          (u/display-not-valid :addTokenType type-str)
-
-          (not (string? name))
-          (u/display-not-valid :addTokenName name)
-
-          :else
-          (let [token (ctob/make-token {:type type
-                                        :name name
-                                        :value value})]
-            (st/emit! (dwtl/create-token id token))
-            (token-proxy plugin-id file-id (:id set) (:id token))))))
+    (fn [attrs]
+      (add-token plugin-id file-id id attrs))
 
     :duplicate
     (fn []

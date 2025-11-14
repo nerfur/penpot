@@ -92,6 +92,16 @@
   [& items]
   (apply mu/merge (map schema items)))
 
+(defn assoc-key
+  "Add a key & value to a schema"
+  [s k v]
+  (mu/assoc s k v))
+
+(defn dissoc-key
+  "Remove a key from a schema"
+  [s k]
+  (mu/dissoc s k))
+
 (defn ref?
   [s]
   (m/-ref-schema? s))

@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
+   [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
@@ -225,6 +227,21 @@
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]
     (.error js/console msg)
     (reject msg)))
+
+(defn decode-and-check
+  "Decodes a javascript object into clj and check against schema. If schema validation fails,
+   displays a not-valid message with the code and hint provided and returns nil."
+  [attrs schema code hint]
+  (try
+    (let [decoder (sm/lazy-decoder schema sm/json-transformer)]
+      (-> (json/->clj attrs)
+          (decoder)
+          ((sm/check-fn schema :hint hint))))
+    (catch :default e
+      (let [data (ex-data e)]
+        (if (= (:code data) :data-validation)
+          (display-not-valid code (str hint " " (sm/humanize-explain (:sm/explain data))))
+          (throw e))))))
 
 (defn mixed-value
   [values]

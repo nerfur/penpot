@@ -114,11 +114,19 @@
   [o]
   (instance? Token o))
 
+(def schema:token-type
+  [::sm/one-of {:decode/json (fn [type]
+                               (if (string? type)
+                                 (cto/dtcg-token-type->token-type type)
+                                 type))}
+
+   cto/token-types])
+
 (def schema:token-attrs
   [:map {:title "Token"}
    [:id ::sm/uuid]
-   [:name cto/token-name-ref]
-   [:type [::sm/one-of cto/token-types]]
+   [:name cto/token-name]
+   [:type schema:token-type]
    [:value ::sm/any]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::ct/inst]])
@@ -133,6 +141,9 @@
 
 (def ^:private check-token-attrs
   (sm/check-fn schema:token-attrs :hint "expected valid params for token"))
+
+(def decode-token-attrs
+  (sm/lazy-decoder schema:token-attrs sm/json-transformer))
 
 (def check-token
   (sm/check-fn schema:token :hint "expected valid token"))
