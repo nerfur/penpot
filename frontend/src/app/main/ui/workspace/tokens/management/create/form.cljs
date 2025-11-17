@@ -80,7 +80,7 @@
                 ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (not (sm/valid? cto/token-name (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? cto/schema:token-name (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))

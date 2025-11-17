@@ -97,7 +97,7 @@
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
 
-(def token-name
+(def schema:token-name
   "A token name can contains letters, numbers, underscores the character $ and dots, but
    not start with $ or end with a dot. The $ character does not have any special meaning,
    but dots separate token groups (e.g. color.primary.background)."
@@ -106,43 +106,43 @@
 
 (def ^:private schema:color
   [:map
-   [:fill {:optional true} token-name]
-   [:stroke-color {:optional true} token-name]])
+   [:fill {:optional true} schema:token-name]
+   [:stroke-color {:optional true} schema:token-name]])
 
 (def color-keys (schema-keys schema:color))
 
 (def ^:private schema:border-radius
   [:map {:title "BorderRadiusTokenAttrs"}
-   [:r1 {:optional true} token-name]
-   [:r2 {:optional true} token-name]
-   [:r3 {:optional true} token-name]
-   [:r4 {:optional true} token-name]])
+   [:r1 {:optional true} schema:token-name]
+   [:r2 {:optional true} schema:token-name]
+   [:r3 {:optional true} schema:token-name]
+   [:r4 {:optional true} schema:token-name]])
 
 (def border-radius-keys (schema-keys schema:border-radius))
 
 (def ^:private schema:shadow
   [:map {:title "ShadowTokenAttrs"}
-   [:shadow {:optional true} token-name]])
+   [:shadow {:optional true} schema:token-name]])
 
 (def shadow-keys (schema-keys schema:shadow))
 
 (def ^:private schema:stroke-width
   [:map
-   [:stroke-width {:optional true} token-name]])
+   [:stroke-width {:optional true} schema:token-name]])
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
 
 (def ^:private schema:sizing-base
   [:map {:title "SizingBaseTokenAttrs"}
-   [:width {:optional true} token-name]
-   [:height {:optional true} token-name]])
+   [:width {:optional true} schema:token-name]
+   [:height {:optional true} schema:token-name]])
 
 (def ^:private schema:sizing-layout-item
   [:map {:title "SizingLayoutItemTokenAttrs"}
-   [:layout-item-min-w {:optional true} token-name]
-   [:layout-item-max-w {:optional true} token-name]
-   [:layout-item-min-h {:optional true} token-name]
-   [:layout-item-max-h {:optional true} token-name]])
+   [:layout-item-min-w {:optional true} schema:token-name]
+   [:layout-item-max-w {:optional true} schema:token-name]
+   [:layout-item-min-h {:optional true} schema:token-name]
+   [:layout-item-max-h {:optional true} schema:token-name]])
 
 (def ^:private schema:sizing
   (-> (reduce mu/union [schema:sizing-base
@@ -155,28 +155,28 @@
 
 (def ^:private schema:opacity
   [:map {:title "OpacityTokenAttrs"}
-   [:opacity {:optional true} token-name]])
+   [:opacity {:optional true} schema:token-name]])
 
 (def opacity-keys (schema-keys schema:opacity))
 
 (def ^:private schema:spacing-gap
   [:map {:title "SpacingGapTokenAttrs"}
-   [:row-gap {:optional true} token-name]
-   [:column-gap {:optional true} token-name]])
+   [:row-gap {:optional true} schema:token-name]
+   [:column-gap {:optional true} schema:token-name]])
 
 (def ^:private schema:spacing-padding
   [:map {:title "SpacingPaddingTokenAttrs"}
-   [:p1 {:optional true} token-name]
-   [:p2 {:optional true} token-name]
-   [:p3 {:optional true} token-name]
-   [:p4 {:optional true} token-name]])
+   [:p1 {:optional true} schema:token-name]
+   [:p2 {:optional true} schema:token-name]
+   [:p3 {:optional true} schema:token-name]
+   [:p4 {:optional true} schema:token-name]])
 
 (def ^:private schema:spacing-margin
   [:map {:title "SpacingMarginTokenAttrs"}
-   [:m1 {:optional true} token-name]
-   [:m2 {:optional true} token-name]
-   [:m3 {:optional true} token-name]
-   [:m4 {:optional true} token-name]])
+   [:m1 {:optional true} schema:token-name]
+   [:m2 {:optional true} schema:token-name]
+   [:m3 {:optional true} schema:token-name]
+   [:m4 {:optional true} schema:token-name]])
 
 (def ^:private schema:spacing
   (-> (reduce mu/union [schema:spacing-gap
@@ -206,56 +206,56 @@
 
 (def ^:private schema:axis
   [:map
-   [:x {:optional true} token-name]
-   [:y {:optional true} token-name]])
+   [:x {:optional true} schema:token-name]
+   [:y {:optional true} schema:token-name]])
 
 (def axis-keys (schema-keys schema:axis))
 
 (def ^:private schema:rotation
   [:map {:title "RotationTokenAttrs"}
-   [:rotation {:optional true} token-name]])
+   [:rotation {:optional true} schema:token-name]])
 
 (def rotation-keys (schema-keys schema:rotation))
 
 (def ^:private schema:font-size
   [:map {:title "FontSizeTokenAttrs"}
-   [:font-size {:optional true} token-name]])
+   [:font-size {:optional true} schema:token-name]])
 
 (def font-size-keys (schema-keys schema:font-size))
 
 (def ^:private schema:letter-spacing
   [:map {:title "LetterSpacingTokenAttrs"}
-   [:letter-spacing {:optional true} token-name]])
+   [:letter-spacing {:optional true} schema:token-name]])
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
 
 (def ^:private schema:font-family
   [:map
-   [:font-family {:optional true} token-name]])
+   [:font-family {:optional true} schema:token-name]])
 
 (def font-family-keys (schema-keys schema:font-family))
 
 (def ^:private schema:text-case
   [:map
-   [:text-case {:optional true} token-name]])
+   [:text-case {:optional true} schema:token-name]])
 
 (def text-case-keys (schema-keys schema:text-case))
 
 (def ^:private schema:font-weight
   [:map
-   [:font-weight {:optional true} token-name]])
+   [:font-weight {:optional true} schema:token-name]])
 
 (def font-weight-keys (schema-keys schema:font-weight))
 
 (def ^:private schema:typography
   [:map
-   [:typography {:optional true} token-name]])
+   [:typography {:optional true} schema:token-name]])
 
 (def typography-token-keys (schema-keys schema:typography))
 
 (def ^:private schema:text-decoration
   [:map
-   [:text-decoration {:optional true} token-name]])
+   [:text-decoration {:optional true} schema:token-name]])
 
 (def text-decoration-keys (schema-keys schema:text-decoration))
 
@@ -270,7 +270,7 @@
                                 #{:line-height}))
 
 (def ^:private schema:number
-  (-> (reduce mu/union [[:map [:line-height {:optional true} token-name]]
+  (-> (reduce mu/union [[:map [:line-height {:optional true} schema:token-name]]
                         schema:rotation])
       (mu/update-properties assoc :title "NumberTokenAttrs")))
 

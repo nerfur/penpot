@@ -18,7 +18,8 @@
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [clojure.datafy :refer [datafy]]))
+   [clojure.datafy :refer [datafy]]
+   [app.main.ui.ds.foundations.assets.icon :as i]))
 
 ;; === Token
 
@@ -116,10 +117,20 @@
 
 (defn- add-token
   [plugin-id file-id set-id attrs]
-  (let [attrs (u/decode-and-check attrs
-                                  schema:add-token-attrs
-                                  :addToken
-                                  "Invalid token attributes")]
+  (let [attrs (-> attrs
+                  (u/decode-and-check schema:add-token-attrs
+                                      :addToken
+                                      "Invalid token attributes")
+                  (u/validate #(dwtv/validate-token-name
+                                (let [tokens-lib (u/locate-tokens-lib file-id)]
+                                  (ctob/get-tokens tokens-lib set-id))
+                                (:name %))
+                              :addToken
+                              "Invalid token name")
+                  (u/validate #(dwtv/validate-token-description
+                                (:description %))
+                              :addToken
+                              "Invalid token description"))]
     (when attrs
       (let [token (ctob/make-token attrs)]
         (st/emit! (dwtl/create-token set-id token))
@@ -127,12 +138,15 @@
 
 (defn- set-token-set-name
   [proxy name]
-  (let [set (u/locate-token-set (:$file-id proxy) (:$id proxy))]
-    (cond
-      (not (string? name))
-      (u/display-not-valid :name name)
-
-      :else
+  (let [set (u/locate-token-set (obj/get proxy "$file-id") (obj/get proxy "$id"))
+        name (u/validate name
+                         #(dwtv/validate-token-set-name
+                           (u/locate-tokens-lib (obj/get proxy "$file-id"))
+                           (obj/get proxy "$id")
+                           %)
+                         :setTokenSet
+                         "Invalid token set name")]
+    (when name
       (st/emit! (dwtl/update-token-set set name)))))
 
 (defn token-set-proxy

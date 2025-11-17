@@ -125,7 +125,7 @@
 (def schema:token-attrs
   [:map {:title "Token"}
    [:id ::sm/uuid]
-   [:name cto/token-name]
+   [:name cto/schema:token-name]
    [:type schema:token-type]
    [:value ::sm/any]
    [:description {:optional true} :string]

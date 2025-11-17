@@ -12,15 +12,15 @@
 
 (t/deftest test-valid-token-name-schema
   ;; Allow regular namespace token names
-  (t/is (true? (sm/validate cto/token-name "Foo")))
-  (t/is (true? (sm/validate cto/token-name "foo")))
-  (t/is (true? (sm/validate cto/token-name "FOO")))
-  (t/is (true? (sm/validate cto/token-name "Foo.Bar.Baz")))
+  (t/is (true? (sm/validate cto/schema:token-name "Foo")))
+  (t/is (true? (sm/validate cto/schema:token-name "foo")))
+  (t/is (true? (sm/validate cto/schema:token-name "FOO")))
+  (t/is (true? (sm/validate cto/schema:token-name "Foo.Bar.Baz")))
   ;; Disallow trailing tokens
-  (t/is (false? (sm/validate cto/token-name "Foo.Bar.Baz....")))
+  (t/is (false? (sm/validate cto/schema:token-name "Foo.Bar.Baz....")))
   ;; Disallow multiple separator dots
-  (t/is (false? (sm/validate cto/token-name "Foo..Bar.Baz")))
+  (t/is (false? (sm/validate cto/schema:token-name "Foo..Bar.Baz")))
   ;; Disallow any special characters
-  (t/is (false? (sm/validate cto/token-name "Hey Foo.Bar")))
-  (t/is (false? (sm/validate cto/token-name "Hey😈Foo.Bar")))
-  (t/is (false? (sm/validate cto/token-name "Hey%Foo.Bar"))))
+  (t/is (false? (sm/validate cto/schema:token-name "Hey Foo.Bar")))
+  (t/is (false? (sm/validate cto/schema:token-name "Hey😈Foo.Bar")))
+  (t/is (false? (sm/validate cto/schema:token-name "Hey%Foo.Bar"))))

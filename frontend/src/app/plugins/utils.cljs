@@ -16,7 +16,8 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (defn locate-file
   [id]
@@ -242,6 +243,18 @@
         (if (= (:code data) :data-validation)
           (display-not-valid code (str hint " " (sm/humanize-explain (:sm/explain data))))
           (throw e))))))
+
+(defn validate
+  "Pass a value through a validator function If the validator returns any error,
+   displays a not-valid message with the code and hint provided and the error
+   messages, and returns nil. If not, returns the value."
+  [value validator code hint]
+  (let [errors (validator value)]
+    (if (d/not-empty? errors)
+      (do
+        (display-not-valid code (str hint " " (str/join ", " errors)))
+        nil)
+      value)))
 
 (defn mixed-value
   [values]
