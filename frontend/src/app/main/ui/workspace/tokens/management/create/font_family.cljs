@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.border-radius
+(ns app.main.ui.workspace.tokens.management.create.font-family
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.files.tokens :as cft]
@@ -23,7 +23,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.tokens.management.create.form-input-token :refer [form-input-token*]]
+   [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-combobox*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -55,12 +55,15 @@
        (when (and name value)
          (nil? (cto/token-value-self-reference? name value))))]]))
 
+
 (mf/defc form*
   [{:keys [token validate-token action is-create selected-token-set-id tokens-tree-in-selected-set] :as props}]
 
   (let [token
         (mf/with-memo [token]
-          (or token {:type :border-radius}))
+          (if token
+            (update token :value cto/join-font-family)
+            {:type :font-family}))
 
         token-type
         (get token :type)
@@ -179,7 +182,7 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input-token*
+       [:> font-picker-combobox*
         {:placeholder (tr "workspace.tokens.token-value-enter")
          :label (tr "workspace.tokens.token-value")
          :name :value

@@ -94,11 +94,11 @@
                        :name name}
      [:& radio-button {:id :on
                        :value :on
-                       :icon deprecated-icon/tick
+                       :icon i/tick
                        :label ""}]
      [:& radio-button {:id :off
                        :value :off
-                       :icon deprecated-icon/close
+                       :icon i/close
                        :label ""}]]))
 
 (mf/defc themes-overview

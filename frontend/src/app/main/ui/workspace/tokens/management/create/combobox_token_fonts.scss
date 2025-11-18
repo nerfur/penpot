@@ -4,15 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "ds/spacing.scss" as *;
+@use "ds/_utils.scss" as *;
 
-.input-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-  inline-size: 100%;
-}
-
-.hint-formated {
-  white-space: pre;
+.font-select-wrapper {
+  position: absolute;
+  width: 100%;
+  height: px2rem(115);
+  top: px2rem(54);
 }
