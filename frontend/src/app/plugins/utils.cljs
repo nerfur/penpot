@@ -229,6 +229,13 @@
     (.error js/console msg)
     (reject msg)))
 
+(defn validate-with-schema
+  "Checks a value against a schema.  If valid, returns nil. If not, returns a list
+   of 18n'ed error messages."
+  [value schema]
+  (let [explainer (sm/explainer schema)]
+    (-> value explainer sm/simplify not-empty)))
+
 (defn decode-and-check
   "Decodes a javascript object into clj and check against schema. If schema validation fails,
    displays a not-valid message with the code and hint provided and returns nil."

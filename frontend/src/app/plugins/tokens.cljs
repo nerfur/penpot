@@ -149,6 +149,14 @@
     (when name
       (st/emit! (dwtl/update-token-set set name)))))
 
+(defn- duplicate-token-set
+  [id]
+  (st/emit! (dwtl/duplicate-token-set id)))
+
+(defn- delete-token-set
+  [id]
+  (st/emit! (dwtl/delete-token-set id)))
+
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"}
@@ -179,8 +187,13 @@
          (ctob/token-set-active? tokens-lib (ctob/get-name set))))
      :set
      (fn [_ value]
-       (let [set (u/locate-token-set file-id id)]
-         (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))}
+       (let [value (u/validate value
+                               #(u/validate-with-schema value [:boolean])
+                               :setActiveSet
+                               value)]
+         (when (some? value)
+           (let [set (u/locate-token-set file-id id)]
+             (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))))}
 
     :toggleActive
     (fn [_]
@@ -237,16 +250,11 @@
 
     :duplicate
     (fn []
-      (let [set  (u/locate-token-set file-id id)
-            set' (ctob/make-token-set (-> (datafy set)
-                                          (dissoc :id
-                                                  :modified-at)))]
-        (st/emit! (dwtl/create-token-set set'))
-        (token-set-proxy plugin-id file-id (:id set'))))
+      (duplicate-token-set id))
 
     :remove
     (fn []
-      (st/emit! (dwtl/delete-token-set id)))))
+      (delete-token-set id))))
 
 (defn token-theme-proxy
   [plugin-id file-id id]

@@ -10,13 +10,14 @@
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.plugins.utils :as u]
    [app.util.i18n :refer [tr]]))
 
 ;; TODO: those validations should be moved to the common module. For this, we need to have
 ;; a way to pass a no-op translation function when called from backend or tests.
 
 (defn- make-token-name-schema
-  "Generates a dynamic schema validation to check a token name:
+  "Generates a dynamic schema to check a token name:
     - Validate name length.
     - Adds a i18n error message to the schema that checks if the name is not well-formed.
     - Checks if other token with a path derived from the name already exists at `tokens-tree`."
@@ -30,21 +31,18 @@
 (defn validate-token-name
   "Validates a token name. If valid, returns nil. If not, returns a list of 18n'ed error messages."
   [tokens-tree name]
-  (let [schema    (make-token-name-schema tokens-tree)
-        explainer (sm/explainer schema)]
-    (-> name explainer sm/simplify not-empty)))
+  (u/validate-with-schema name (make-token-name-schema tokens-tree)))
 
 (def ^:private schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
-(def validate-token-description
+(defn validate-token-description
   "Validates a token description If valid, returns nil. If not, returns a list of 18n'ed error messages."
-  (let [explainer (sm/lazy-explainer schema:token-description)]
-    (fn [description]
-      (-> description explainer sm/simplify not-empty))))
+  [description]
+  (u/validate-with-schema description schema:token-description))
 
 (defn- make-token-set-name-schema
-  "Generates a dynamic schema validation to check a token set name:
+  "Generates a dynamic schema to check a token set name:
     - Validate name length.
     - Adds a i18n error message to the schema that checks if the name is not well-formed.
     - Checks if other token set with a path derived from the name already exists at `tokens-tree`."
@@ -59,6 +57,4 @@
 (defn validate-token-set-name
   "Validates a token set name. If valid, returns nil. If not, returns a list of 18n'ed error messages."
   [tokens-lib set-id name]
-  (let [schema    (make-token-set-name-schema tokens-lib set-id)
-        explainer (sm/explainer schema)]
-    (-> name explainer sm/simplify not-empty)))
+  (u/validate-with-schema name (make-token-set-name-schema tokens-lib set-id)))
