@@ -33,7 +33,7 @@
   [tokens-tree name]
   (u/validate-with-schema name (make-token-name-schema tokens-tree)))
 
-(def ^:private schema:token-description
+(def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn validate-token-description

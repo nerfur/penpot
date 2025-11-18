@@ -111,8 +111,6 @@
 
 ;; === Token Set
 
-(def ^:private schema:add-token-attrs
-
 (defn- make-add-token-schema
   [tokens-tree]
   (sm/merge
@@ -120,14 +118,14 @@
        (sm/dissoc-key :id))
    [:map
     [:name (dwtv/make-token-name-schema tokens-tree)]
-    [:description dwtv/schema:token-description]]))
+    [:description {:optional true} dwtv/schema:token-description]]))
 
 (defn- add-token
   [plugin-id file-id set-id attrs]
   (let [tokens-lib  (u/locate-tokens-lib file-id)
         tokens-tree (ctob/get-tokens tokens-lib set-id)
         schema      (make-add-token-schema tokens-tree)]
-    (when-let [attrs (u/coerce schema :addToken "invalid token attrs")]
+    (when-let [attrs (u/coerce attrs schema :addToken "invalid token attrs")]
       (let [token (ctob/make-token attrs)]
         (st/emit! (dwtl/create-token set-id token))
         (token-proxy plugin-id file-id (:id set) (:id token))))))

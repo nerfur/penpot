@@ -258,13 +258,12 @@
    displays a not-valid message with the code and hint provided and
   returns nil."
   [attrs schema code hint]
-  (try
-    (let [decoder   (sm/decoder schema sm/json-transformer)
-          explainer (sm/explainer schema)
-          attrs     (-> attrs json/->clj decoder)]
-      (if-let [explain (explainer attrs)]
-        (display-not-valid code (str hint " " (sm/humanize-explain explain)))
-        attrs))))
+  (let [decoder   (sm/decoder schema sm/json-transformer)
+        explainer (sm/explainer schema)
+        attrs     (-> attrs json/->clj decoder)]
+    (if-let [explain (explainer attrs)]
+      (display-not-valid code (str hint " " (sm/humanize-explain explain)))
+      attrs)))
 
 (defn validate
   "Pass a value through a validator function If the validator returns any error,
