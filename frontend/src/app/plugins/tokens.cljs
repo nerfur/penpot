@@ -111,27 +111,23 @@
 
 ;; === Token Set
 
-(def ^private schema:add-token-attrs
-  (-> (sm/schema ctob/schema:token-attrs)
-      (sm/dissoc-key :id)))
+(def ^:private schema:add-token-attrs
+
+(defn- make-add-token-schema
+  [tokens-tree]
+  (sm/merge
+   (-> (sm/schema ctob/schema:token-attrs)
+       (sm/dissoc-key :id))
+   [:map
+    [:name (dwtv/make-token-name-schema tokens-tree)]
+    [:description dwtv/schema:token-description]]))
 
 (defn- add-token
   [plugin-id file-id set-id attrs]
-  (let [attrs (-> attrs
-                  (u/decode-and-check schema:add-token-attrs
-                                      :addToken
-                                      "Invalid token attributes")
-                  (u/validate #(dwtv/validate-token-name
-                                (let [tokens-lib (u/locate-tokens-lib file-id)]
-                                  (ctob/get-tokens tokens-lib set-id))
-                                (:name %))
-                              :addToken
-                              "Invalid token name")
-                  (u/validate #(dwtv/validate-token-description
-                                (:description %))
-                              :addToken
-                              "Invalid token description"))]
-    (when attrs
+  (let [tokens-lib  (u/locate-tokens-lib file-id)
+        tokens-tree (ctob/get-tokens tokens-lib set-id)
+        schema      (make-add-token-schema tokens-tree)]
+    (when-let [attrs (u/coerce schema :addToken "invalid token attrs")]
       (let [token (ctob/make-token attrs)]
         (st/emit! (dwtl/create-token set-id token))
         (token-proxy plugin-id file-id (:id set) (:id token))))))

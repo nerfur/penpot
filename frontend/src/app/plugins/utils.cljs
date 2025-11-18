@@ -221,7 +221,9 @@
 
 (defn display-not-valid
   [code value]
-  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
+  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
+  nil)
+
 
 (defn reject-not-valid
   [reject code value]
@@ -250,6 +252,19 @@
         (if (= (:code data) :data-validation)
           (display-not-valid code (str hint " " (sm/humanize-explain (:sm/explain data))))
           (throw e))))))
+
+(defn coerce
+  "Decodes a javascript object into clj and check against schema. If schema validation fails,
+   displays a not-valid message with the code and hint provided and
+  returns nil."
+  [attrs schema code hint]
+  (try
+    (let [decoder   (sm/decoder schema sm/json-transformer)
+          explainer (sm/explainer schema)
+          attrs     (-> attrs json/->clj decoder)]
+      (if-let [explain (explainer attrs)]
+        (display-not-valid code (str hint " " (sm/humanize-explain explain)))
+        attrs))))
 
 (defn validate
   "Pass a value through a validator function If the validator returns any error,

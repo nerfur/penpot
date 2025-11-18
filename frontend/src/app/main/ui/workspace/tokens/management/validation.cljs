@@ -16,7 +16,7 @@
 ;; TODO: those validations should be moved to the common module. For this, we need to have
 ;; a way to pass a no-op translation function when called from backend or tests.
 
-(defn- make-token-name-schema
+(defn make-token-name-schema
   "Generates a dynamic schema to check a token name:
     - Validate name length.
     - Adds a i18n error message to the schema that checks if the name is not well-formed.
