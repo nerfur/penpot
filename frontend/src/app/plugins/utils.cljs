@@ -250,7 +250,7 @@
     (catch :default e
       (let [data (ex-data e)]
         (if (= (:code data) :data-validation)
-          (display-not-valid code (str hint " " (sm/humanize-explain (:sm/explain data))))
+          (display-not-valid code (str hint " " (sm/humanize-explain (::sm/explain data))))
           (throw e))))))
 
 (defn coerce

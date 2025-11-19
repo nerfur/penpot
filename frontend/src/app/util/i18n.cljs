@@ -8,6 +8,7 @@
   "A i18n foundation."
   (:require
    [app.common.data :as d]
+   [app.common.i18n]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.config :as cfg]
@@ -168,6 +169,10 @@
     [:> tag-name {:dangerouslySetInnerHTML #js {:__html content}
                   :className class
                   :on-click on-click}]))
+
+;; We set the real translation function in the common i18n namespace,
+;; so that when common code calls (tr ...) it uses this function.
+(set! app.common.i18n/tr tr)
 
 ;; DEPRECATED
 (defn use-locale
