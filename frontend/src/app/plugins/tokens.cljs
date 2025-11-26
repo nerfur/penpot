@@ -18,8 +18,7 @@
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [clojure.datafy :refer [datafy]]
-   [app.main.ui.ds.foundations.assets.icon :as i]))
+   [clojure.datafy :refer [datafy]]))
 
 ;; === Token
 
