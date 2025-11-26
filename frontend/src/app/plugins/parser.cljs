@@ -514,3 +514,27 @@
   (case axis
     "horizontal" :y
     "vertical"   :x))
+
+(defn parse-command-params
+  [params]
+  (d/without-nils
+   {:x (obj/get params "x")
+    :y (obj/get params "y")
+    :c1x (obj/get params "c1x")
+    :c1y (obj/get params "c1y")
+    :c2x (obj/get params "c2x")
+    :c2y (obj/get params "c2y")
+    :rx (obj/get params "rx")
+    :ry (obj/get params "ry")
+    :xAxisRotation (obj/get params "x-axis-rotation")
+    :largeArcFlag (obj/get params "large-arc-flag")
+    :sweepFlag (obj/get params "sweep-flag")}))
+
+(defn parse-command
+  [command]
+  {:command (-> (obj/get command "command") parse-keyword)
+   :params (-> (obj/get command "params") parse-command-params)})
+
+(defn parse-commands
+  [commands]
+  (mapv parse-command commands))
