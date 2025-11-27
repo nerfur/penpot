@@ -277,6 +277,13 @@
   (let [explain (fn [] (me/with-error-messages explain))]
     ((mdp/prettifier variant message explain default-options))))
 
+(defn validation-errors
+  "Checks a value against a schema. If valid, returns nil. If not, returns a list
+   of english error messages."
+  [value schema]
+  (let [explainer (explainer schema)]
+    (-> value explainer simplify not-empty)))
+
 (defmacro ignoring
   [expr]
   (if (:ns &env)

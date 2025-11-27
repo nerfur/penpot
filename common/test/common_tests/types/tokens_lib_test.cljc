@@ -2013,3 +2013,11 @@
            (t/is (some? imported-ref))
            (t/is (= (:type original-ref) (:type imported-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
+
+(t/deftest token-name-path-exists?-test
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))

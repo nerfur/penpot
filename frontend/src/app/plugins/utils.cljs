@@ -224,34 +224,11 @@
   (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
   nil)
 
-
 (defn reject-not-valid
   [reject code value]
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]
     (.error js/console msg)
     (reject msg)))
-
-(defn validate-with-schema
-  "Checks a value against a schema.  If valid, returns nil. If not, returns a list
-   of 18n'ed error messages."
-  [value schema]
-  (let [explainer (sm/explainer schema)]
-    (-> value explainer sm/simplify not-empty)))
-
-(defn decode-and-check
-  "Decodes a javascript object into clj and check against schema. If schema validation fails,
-   displays a not-valid message with the code and hint provided and returns nil."
-  [attrs schema code hint]
-  (try
-    (let [decoder (sm/lazy-decoder schema sm/json-transformer)]
-      (-> (json/->clj attrs)
-          (decoder)
-          ((sm/check-fn schema :hint hint))))
-    (catch :default e
-      (let [data (ex-data e)]
-        (if (= (:code data) :data-validation)
-          (display-not-valid code (str hint " " (sm/humanize-explain (::sm/explain data))))
-          (throw e))))))
 
 (defn coerce
   "Decodes a javascript object into clj and check against schema. If schema validation fails,

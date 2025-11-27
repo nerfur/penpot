@@ -7,6 +7,7 @@
 (ns app.plugins.tokens
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -14,7 +15,6 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.validation :as dwtv]
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -54,7 +54,7 @@
      :set
      (fn [_ value]
        (let [tokens-lib (u/locate-tokens-lib file-id)
-             errors     (dwtv/validate-token-name
+             errors     (cft/validate-token-name
                          (ctob/get-tokens tokens-lib set-id)
                          value)]
          (cond
@@ -113,11 +113,11 @@
 (defn- make-add-token-schema
   [tokens-tree]
   (sm/merge
-   (-> (sm/schema ctob/schema:token-attrs)
+   (-> (sm/schema cto/schema:token-attrs)
        (sm/dissoc-key :id))
    [:map
-    [:name (dwtv/make-token-name-schema tokens-tree)]
-    [:description {:optional true} dwtv/schema:token-description]]))
+    [:name (cft/make-token-name-schema tokens-tree)]
+    [:description {:optional true} cft/schema:token-description]]))
 
 (defn- add-token
   [plugin-id file-id set-id attrs]
@@ -133,7 +133,7 @@
   [proxy name]
   (let [set (u/locate-token-set (obj/get proxy "$file-id") (obj/get proxy "$id"))
         name (u/validate name
-                         #(dwtv/validate-token-set-name
+                         #(cft/validate-token-set-name
                            (u/locate-tokens-lib (obj/get proxy "$file-id"))
                            (obj/get proxy "$id")
                            %)
@@ -181,7 +181,7 @@
      :set
      (fn [_ value]
        (let [value (u/validate value
-                               #(u/validate-with-schema value [:boolean])
+                               #(sm/validation-errors value [:boolean])
                                :setActiveSet
                                value)]
          (when (some? value)

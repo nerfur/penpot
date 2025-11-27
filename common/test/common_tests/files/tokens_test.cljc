@@ -80,16 +80,3 @@
     (t/is (nil? (cft/shapes-token-applied? {:name "a"} [{:applied-tokens {:x "a"}}
                                                         {:applied-tokens {:x "a"}}]
                                            #{:y})))))
-
-(t/deftest name->path-test
-  (t/is (= ["foo" "bar" "baz"] (cft/token-name->path "foo.bar.baz")))
-  (t/is (= ["foo" "bar" "baz"] (cft/token-name->path "foo..bar.baz")))
-  (t/is (= ["foo" "bar" "baz"] (cft/token-name->path "foo..bar.baz...."))))
-
-(t/deftest token-name-path-exists?-test
-  (t/is (true? (cft/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
-  (t/is (true? (cft/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
-  (t/is (true? (cft/token-name-path-exists? "border-radius.sm" {"border-radius" {:name "sm"}})))
-  (t/is (true? (cft/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
-  (t/is (false? (cft/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
-  (t/is (false? (cft/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))

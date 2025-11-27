@@ -114,36 +114,19 @@
   [o]
   (instance? Token o))
 
-(def schema:token-type
-  [::sm/one-of {:decode/json (fn [type]
-                               (if (string? type)
-                                 (cto/dtcg-token-type->token-type type)
-                                 type))}
-
-   cto/token-types])
-
-(def schema:token-attrs
-  [:map {:title "Token"}
-   [:id ::sm/uuid]
-   [:name cto/schema:token-name]
-   [:type schema:token-type]
-   [:value ::sm/any]
-   [:description {:optional true} :string]
-   [:modified-at {:optional true} ::ct/inst]])
-
 (declare make-token)
 
 (def schema:token
-  [:and {:gen/gen (->> (sg/generator schema:token-attrs)
+  [:and {:gen/gen (->> (sg/generator cto/schema:token-attrs)
                        (sg/fmap #(make-token %)))}
-   (sm/required-keys schema:token-attrs)
+   (sm/required-keys cto/schema:token-attrs)
    [:fn token?]])
 
 (def ^:private check-token-attrs
-  (sm/check-fn schema:token-attrs :hint "expected valid params for token"))
+  (sm/check-fn cto/schema:token-attrs :hint "expected valid params for token"))
 
 (def decode-token-attrs
-  (sm/lazy-decoder schema:token-attrs sm/json-transformer))
+  (sm/lazy-decoder cto/schema:token-attrs sm/json-transformer))
 
 (def check-token
   (sm/check-fn schema:token :hint "expected valid token"))
@@ -1440,6 +1423,50 @@ Will return a value that matches this schema:
       (-> set
           (rename copy-name)
           (reid (uuid/next))))))
+
+(defn- token-name->path-selector
+  "Splits token-name into map with `:path` and `:selector` using `token-name->path`.
+
+  `:selector` is the last item of the names path
+  `:path` is everything leading up the the `:selector`."
+  [token-name]
+  (let [path-segments (get-token-path {:name token-name})
+        last-idx (dec (count path-segments))
+        [path [selector]] (split-at last-idx path-segments)]
+    {:path (seq path)
+     :selector selector}))
+
+(defn token-name-path-exists?
+  "Traverses the path from `token-name` down a `tokens-tree` and checks if a token at that path exists.
+
+  It's not allowed to create a token inside a token. E.g.:
+  Creating a token with
+
+    {:name \"foo.bar\"}
+
+  in the tokens tree:
+
+    {\"foo\" {:name \"other\"}}"
+  [token-name tokens-tree]
+  (let [{:keys [path selector]} (token-name->path-selector token-name)
+        path-target (reduce
+                     (fn [acc cur]
+                       (let [target (get acc cur)]
+                         (cond
+                           ;; Path segment doesn't exist yet
+                           (nil? target) (reduced false)
+                           ;; A token exists at this path
+                           (:name target) (reduced true)
+                           ;; Continue traversing the true
+                           :else target)))
+                     tokens-tree
+                     path)]
+    (cond
+      (boolean? path-target) path-target
+      (get path-target :name) true
+      :else (-> (get path-target selector)
+                (seq)
+                (boolean)))))
 
 ;; === Import / Export from JSON format
 

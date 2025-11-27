@@ -42,7 +42,7 @@
        [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
        (sm/update-properties cto/schema:token-name assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
 
      [:value ::sm/text]
 

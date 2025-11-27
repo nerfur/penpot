@@ -41,7 +41,6 @@
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
    [app.main.ui.workspace.tokens.management.create.text-case :as text-case]
-   [app.main.ui.workspace.tokens.management.validation :as dwtv]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -211,7 +210,7 @@
     ;; Entering form without a value - show no error just resolve nil
     (nil? token-value) (rx/of nil)
     ;; Validate refrence string
-    (cto/shadow-composite-token-reference? token-value) (default-validate-token props)
+    (cto/composite-token-reference? token-value) (default-validate-token props)
     ;; Validate composite token
     :else
     (-> props
@@ -336,7 +335,7 @@
 
         token-path
         (mf/with-memo [token-name]
-          (cft/token-name->path token-name))
+          (ctob/get-token-path {:name token-name}))
 
         tokens-tree-in-selected-set
         (mf/with-memo [token-path tokens-in-selected-set]
@@ -349,7 +348,7 @@
          (mf/deps touched-name?)
          (fn [e]
            (let [value  (dom/get-target-val e)
-                 errors (dwtv/validate-token-name tokens-tree-in-selected-set value)]
+                 errors (cft/validate-token-name tokens-tree-in-selected-set value)]
              (when touched-name? (reset! warning-name-change* true))
              (reset! name-errors* errors))))
 
@@ -357,7 +356,7 @@
         (mf/with-memo [touched-name?]
           (uf/debounce (fn [token-name]
                          (when touched-name?
-                           (reset! name-errors* (dwtv/validate-token-name tokens-tree-in-selected-set token-name))))
+                           (reset! name-errors* (cft/validate-token-name tokens-tree-in-selected-set token-name))))
                        300))
 
         on-update-name
@@ -440,7 +439,7 @@
         (mf/with-memo []
           (uf/debounce (fn [e]
                          (let [value  (dom/get-target-val e)
-                               errors (dwtv/validate-token-description value)]
+                               errors (cft/validate-token-description value)]
                            (reset! description-errors* errors)))))
 
         on-update-description
@@ -470,11 +469,11 @@
            ;; and press enter before the next validations could return.
 
            (let [clean-name         (clean-name (mf/ref-val token-name-ref))
-                 valid-name?        (empty? (dwtv/validate-token-name tokens-tree-in-selected-set clean-name))
+                 valid-name?        (empty? (cft/validate-token-name tokens-tree-in-selected-set clean-name))
 
                  value              (mf/ref-val value-ref)
                  clean-description  (mf/ref-val description-ref)
-                 valid-description? (or (some-> clean-description dwtv/validate-token-description empty?) true)]
+                 valid-description? (or (some-> clean-description cft/validate-token-description empty?) true)]
 
              (when (and valid-name? valid-description?)
                (->> (validate-token {:token-value value
@@ -1402,7 +1401,7 @@
 
         token-path
         (mf/with-memo [token]
-          (cft/token-name->path (:name token)))
+          (ctob/get-token-path token))
 
         tokens-tree-in-selected-set
         (mf/with-memo [token-path tokens-in-selected-set]
