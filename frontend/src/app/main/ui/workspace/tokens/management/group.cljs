@@ -16,10 +16,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layers.layer-button :refer [layer-button*]]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -53,6 +55,9 @@
                     segment-count (count path-segments)]
                   (= 1 segment-count)))
                 segment-tokens)
+        _ (pp/pprint {:segment-name segment-name
+                      :is-leaf is-leaf
+                      :segment-tokens segment-tokens})
         leaf-token (when is-leaf (first segment-tokens))]
     {:name segment-name
      :path current-path
@@ -112,27 +117,18 @@
   [{:keys [node selected-shapes is-selected-inside-layout active-theme-tokens on-token-pill-click on-context-menu]}]
   (let [expanded* (mf/use-state false)
         expanded (deref expanded*)
-        swap-folder-expanded #(swap! expanded* not)
-        _ (pp/pprint (:depth node))]
+        swap-folder-expanded #(swap! expanded* not)]
     [:li {:class (stl/css :folder-node)}
      [:> layer-button* {:label (:name node)
                         :expanded expanded
                         :is-expandable (:has-children node)
                         :on-toggle-expand swap-folder-expanded}]
      (when expanded
-       (let [has-children (:has-children node)
-             children-fn (:children-fn node)
-             _ (pp/pprint {:action "Rendering folder children"
-                           :node node})]
+       (let [children-fn (:children-fn node)]
          [:div {:class (stl/css :folder-children-wrapper)}
          (when children-fn
            (let [children (children-fn)]
               (for [child children]
-              ;;  (let [_ (pp/pprint "Rendering token pill")
-              ;;        _ (pp/pprint {:token (:token child)})
-              ;;        _ (pp/pprint {:selected-shapes selected-shapes})
-              ;;        _ (pp/pprint {:is-selected-inside-layout is-selected-inside-layout})
-              ;;        _ (pp/pprint {:active-theme-tokens active-theme-tokens})]
                 (if (not (:is-token child))
                   [:ul {:class (stl/css :node-parent)}
                    [:> folder-node* {:key (:path child)
@@ -163,13 +159,15 @@
 (mf/defc token-tree*
   {::mf/schema schema:token-tree}
   [{:keys [tokens selected-shapes is-selected-inside-layout active-theme-tokens on-token-pill-click on-context-menu]}]
-  (let [tree (build-tree-root tokens)]
+  (let [tree (mf/use-memo
+              (mf/deps tokens)
+              (fn []
+                (build-tree-root tokens)))]
     [:div {:class (stl/css :token-tree-wrapper)}
      (for [node tree]
        [:ul {:class (stl/css :node-parent)
              :key (:path node)
              :style {:padding-inline-start (* 16 (inc (:depth node)))}}
-        (let [_ (pp/pprint {:node node})]
           (if (:is-token node)
           ;; Render token pill
             [:> token-pill*
@@ -185,7 +183,7 @@
                               :is-selected-inside-layout is-selected-inside-layout
                               :active-theme-tokens active-theme-tokens
                               :on-token-pill-click on-token-pill-click
-                              :on-context-menu on-context-menu}]))])]))
+                              :on-context-menu on-context-menu}])])]))
 
 (def ^:private schema:token-group
   [:map
@@ -215,8 +213,6 @@
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
-
-        _ (pp/pprint {:tokens tokens :count (count tokens)})
 
         expandable? (d/nilv (seq tokens) false)
 
@@ -256,24 +252,24 @@
          (mf/deps not-editing? selected-ids)
          (fn [event token]
            (dom/stop-propagation event)
-           (let [_ (pp/pprint "on-token-pill-click")
-                 _ (pp/pprint {:token token :selected-ids selected-ids})]
              (when (and not-editing? (seq selected-shapes) (not= (:type token) :number))
                (st/emit! (dwta/toggle-token {:token token
-                                             :shape-ids selected-ids}))))))]
+                                             :shape-ids selected-ids})))))]
 
     [:div {:class (stl/css :token-section-wrapper)}
      [:> layer-button* {:label title
                         :expanded is-open
-                        :description (when expandable?(dm/str (count tokens)))
+                        :description (when expandable? (dm/str (count tokens)))
                         :is-expandable expandable?
                         :on-toggle-expand on-toggle-open-click
                         :icon (token-section-icon type)}
-      [:> icon* {:icon-id (token-section-icon type)
-                 :class (stl/css :token-section-icon)}]]
-      ;; [:> icon* {:icon-id (token-section-icon type)
-      ;;         :class (stl/css :token-section-icon)}]
-      ;; [:span {:on-click on-toggle-open-click} title]
+      (when can-edit?
+        [:> icon-button* {:id (str "add-token-button-" title)
+                          :icon "add"
+                          :aria-label (tr "workspace.tokens.add-token" title)
+                          :variant "ghost"
+                          :on-click on-popover-open-click
+                          :class (stl/css :token-section-icon)}])]
      (when is-open
        [:> token-tree* {:tokens tokens
                         :selected-shapes selected-shapes
