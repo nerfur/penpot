@@ -8,7 +8,8 @@
 (ns app.main.ui.workspace.tokens.management.group
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.types.token :as cto]
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -16,12 +17,12 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.layers.layer-button :refer [layer-button*]]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
    [app.util.dom :as dom]
    [cljs.pprint :as pp]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]
-   [app.common.data :as d]))
+   [rumext.v2 :as mf]))
 
 (defn- parse-token-path
   "Splits a token name into path segments"
@@ -111,42 +112,44 @@
   [{:keys [node selected-shapes is-selected-inside-layout active-theme-tokens on-token-pill-click on-context-menu]}]
   (let [expanded* (mf/use-state false)
         expanded (deref expanded*)
-        swap-folder-expanded #(swap! expanded* not)]
-    [:div {:class (stl/css :folder-node)}
-     [:button {:class (stl/css :folder-node-button)
-               :on-click swap-folder-expanded}
-      (if expanded
-        [:> icon* {:icon-id i/arrow-down :class (stl/css :folder-node-icon)}]
-        [:> icon* {:icon-id i/arrow-right :class (stl/css :folder-node-icon)}])
-      [:span {:class (stl/css :folder-node-name)} (:name node)]]
+        swap-folder-expanded #(swap! expanded* not)
+        _ (pp/pprint (:depth node))]
+    [:li {:class (stl/css :folder-node)}
+     [:> layer-button* {:label (:name node)
+                        :expanded expanded
+                        :is-expandable (:has-children node)
+                        :on-toggle-expand swap-folder-expanded}]
      (when expanded
-       (let [children-fn (:children-fn node)]
+       (let [has-children (:has-children node)
+             children-fn (:children-fn node)
+             _ (pp/pprint {:action "Rendering folder children"
+                           :node node})]
+         [:div {:class (stl/css :folder-children-wrapper)}
          (when children-fn
            (let [children (children-fn)]
-             (for [child children]
-               (let [
-                     _ (pp/pprint "Rendering token pill")
-                     _ (pp/pprint {:token (:token child)})
-                     _ (pp/pprint {:selected-shapes selected-shapes})
-                     _ (pp/pprint {:is-selected-inside-layout is-selected-inside-layout})
-                     _ (pp/pprint {:active-theme-tokens active-theme-tokens})
-               ]
-                 (if (:is-token child)
-                 [:> token-pill*
-                  {:key (get-in child [:token :id])
-                   :token (:token child)
-                   :selected-shapes selected-shapes
-                   :is-selected-inside-layout is-selected-inside-layout
-                   :active-theme-tokens active-theme-tokens
-                   :on-click on-token-pill-click
-                   :on-context-menu on-context-menu}]
-                 [:> folder-node* {:key (:path child)
-                                   :node child
-                                   :selected-shapes selected-shapes
-                                   :is-selected-inside-layout is-selected-inside-layout
-                                   :active-theme-tokens active-theme-tokens
-                                   :on-token-pill-click on-token-pill-click
-                                   :on-context-menu on-context-menu}])))))))]))
+              (for [child children]
+              ;;  (let [_ (pp/pprint "Rendering token pill")
+              ;;        _ (pp/pprint {:token (:token child)})
+              ;;        _ (pp/pprint {:selected-shapes selected-shapes})
+              ;;        _ (pp/pprint {:is-selected-inside-layout is-selected-inside-layout})
+              ;;        _ (pp/pprint {:active-theme-tokens active-theme-tokens})]
+                (if (not (:is-token child))
+                  [:ul {:class (stl/css :node-parent)}
+                   [:> folder-node* {:key (:path child)
+                                     :node child
+                                     :selected-shapes selected-shapes
+                                     :is-selected-inside-layout is-selected-inside-layout
+                                     :active-theme-tokens active-theme-tokens
+                                     :on-token-pill-click on-token-pill-click
+                                     :on-context-menu on-context-menu}]]
+                  [:> token-pill*
+                   {:key (get-in child [:token :id])
+                    :token (:token child)
+                    :selected-shapes selected-shapes
+                    :is-selected-inside-layout is-selected-inside-layout
+                    :active-theme-tokens active-theme-tokens
+                    :on-click on-token-pill-click
+                    :on-context-menu on-context-menu}]))))]))]))
 
 (def ^:private schema:token-tree
   [:map
@@ -163,7 +166,9 @@
   (let [tree (build-tree-root tokens)]
     [:div {:class (stl/css :token-tree-wrapper)}
      (for [node tree]
-       [:div {:key (:path node)}
+       [:ul {:class (stl/css :node-parent)
+             :key (:path node)
+             :style {:padding-inline-start (* 16 (inc (:depth node)))}}
         (let [_ (pp/pprint {:node node})]
           (if (:is-token node)
           ;; Render token pill
@@ -200,6 +205,8 @@
         editing-ref  (mf/deref refs/workspace-editor-state)
         not-editing? (empty? editing-ref)
 
+        is-open (d/nilv is-open false)
+
         can-edit?
         (mf/use-ctx ctx/can-edit?)
 
@@ -208,6 +215,10 @@
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
+
+        _ (pp/pprint {:tokens tokens :count (count tokens)})
+
+        expandable? (d/nilv (seq tokens) false)
 
         on-context-menu
         (mf/use-fn
@@ -248,31 +259,38 @@
            (let [_ (pp/pprint "on-token-pill-click")
                  _ (pp/pprint {:token token :selected-ids selected-ids})]
              (when (and not-editing? (seq selected-shapes) (not= (:type token) :number))
-                  (st/emit! (dwta/toggle-token {:token token
-                                                :shape-ids selected-ids}))))))]
+               (st/emit! (dwta/toggle-token {:token token
+                                             :shape-ids selected-ids}))))))]
 
     [:div {:class (stl/css :token-section-wrapper)}
-
-     [:div
+     [:> layer-button* {:label title
+                        :expanded is-open
+                        :description (when expandable?(dm/str (count tokens)))
+                        :is-expandable expandable?
+                        :on-toggle-expand on-toggle-open-click
+                        :icon (token-section-icon type)}
       [:> icon* {:icon-id (token-section-icon type)
-              :class (stl/css :token-section-icon)}]
-      [:span {:on-click on-toggle-open-click} title]
-      (when is-open
-        [:div
-         [:> token-tree* {:tokens tokens
-                          :selected-shapes selected-shapes
-                          :is-selected-inside-layout is-selected-inside-layout
-                          :on-token-pill-click on-token-pill-click
-                          :on-context-menu on-context-menu
-                          :active-theme-tokens active-theme-tokens}]
-         #_[:div {:class (stl/css :token-pills-wrapper)}
-          (for [token tokens]
-            [:> token-pill*
-             {:key (:name token)
-              :token token
-              :selected-shapes selected-shapes
-              :is-selected-inside-layout is-selected-inside-layout
-              :active-theme-tokens active-theme-tokens
-              :on-click on-token-pill-click
-              :on-context-menu on-context-menu}])]])]]))
+                 :class (stl/css :token-section-icon)}]]
+      ;; [:> icon* {:icon-id (token-section-icon type)
+      ;;         :class (stl/css :token-section-icon)}]
+      ;; [:span {:on-click on-toggle-open-click} title]
+     (when is-open
+       [:> token-tree* {:tokens tokens
+                        :selected-shapes selected-shapes
+                        :is-selected-inside-layout is-selected-inside-layout
+                        :on-token-pill-click on-token-pill-click
+                        :on-context-menu on-context-menu
+                        :active-theme-tokens active-theme-tokens}])]))
 
+
+
+#_[:div {:class (stl/css :token-pills-wrapper)}
+   (for [token tokens]
+     [:> token-pill*
+      {:key (:name token)
+       :token token
+       :selected-shapes selected-shapes
+       :is-selected-inside-layout is-selected-inside-layout
+       :active-theme-tokens active-theme-tokens
+       :on-click on-token-pill-click
+       :on-context-menu on-context-menu}])]
